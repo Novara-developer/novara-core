@@ -7,162 +7,293 @@
 
 ---
 
-## Overview
+## 1. Overview
 
-When an AI system causes damage, this protocol defines:
+The **Novara Incident Protocol** defines how AI-related harms are:
 
-1. When the incident qualifies for **automatic remedy**  
-2. How responsibility (**attribution**) is calculated  
-3. How payment is executed from **SLO-Bonds**
+- detected and recorded  
+- attributed to systems, policies, and actors  
+- remedied using **SLO-Bonds** and other mechanisms
 
-This document is implementation-neutral and must be read together with:
+It connects three things:
 
-- Novara Constitution v0.1 (evidence-first governance)
-- Novara Evidence Bundle v0.1 (technical format)
+- **Evidence Bundles** (what actually happened)  
+- **Proof Rail** (what payments are allowed)  
+- **Human-Readable Proof** (what is explained to people)
 
----
+Goal:
 
-## Damage threshold
-
-- **Minimum:** ¥10,000 (or local currency equivalent)  
-- **Below threshold:**
-  - Vendor / operator MAY remediate voluntarily
-  - No automatic SLO-Bond payment is triggered
-- **At or above threshold:**
-  - This protocol MUST be applied
-  - The case becomes a **Novara incident** and SHOULD appear in public stats
+> When an AI system harms someone,  
+> there is a predictable, verifiable way  
+> to answer: *what happened, who pays, and what changes*.
 
 ---
 
-## Attribution
+## 2. Scope
 
-Responsibility is split between:
+This protocol applies when all are true:
 
-- **AI Vendor** — model, training data, updates  
-- **Operator** — deployment, configuration, monitoring  
-- **User** — misuse, bad faith, clear policy violation  
+1. An AI-involved system made or heavily influenced a decision, and  
+2. The decision caused or plausibly caused harm (financial, access, rights, etc.), and  
+3. The harm crosses a **public threshold** (e.g. ≥ ¥10,000 or equivalent non-monetary impact).
 
-They MUST sum to 1.0:
+Examples:
+
+- A claims AI wrongly denies an insurance payout  
+- A credit scoring model blocks access to a loan  
+- An automated subsidy system under-pays a group  
+- An AI moderation system wrongly deletes important content
+
+This spec does **not** cover:
+
+- purely internal near-misses without impact  
+- general model evaluations without specific harm
+
+---
+
+## 3. Core concepts
+
+### 3.1 Incident
+
+A **Novara Incident** is a structured record that:
+
+- points to one or more **Evidence Bundles**  
+- describes the harm and affected subjects  
+- triggers SLO-Bond logic and potential payments  
+- anchors the Human-Readable Proof
+
+Each incident has a stable ID, e.g.:
 
 ```text
-Attribution_AI + Attribution_Operator + Attribution_User = 1.0
+nvr-inc-2025-000123
 
-Example (medical triage, unnecessary test ¥10,000)
+3.2 Harm Threshold
 
-Attribution_AI        = 0.8
-Attribution_Operator  = 0.2
-Attribution_User      = 0.0
+A deployment MUST define:
+	•	a monetary threshold (e.g. ¥10,000) and/or
+	•	a qualitative threshold (e.g. denial of essential service)
 
-Interpretation:
-	•	Model clearly over-weighted age → AI Vendor 80%
-	•	Operator failed to cap high-cost tests for low-risk cases → 20%
-	•	User followed instructions reasonably → 0%
+Above that, the Incident Protocol MUST be invoked.
 
-⸻
+3.3 SLO-Bond
 
-Evidence requirements
+A SLO-Bond is a pre-funded commitment:
+	•	tied to a system, policy, or SLO (Service Level Objective)
+	•	with a formula for compensation once harm is confirmed
 
-Automatic payment MUST NOT trigger unless all conditions hold:
-	1.	A valid Novara Evidence Bundle v0.1+ exists
-	•	Includes: meta.json, aal.ndjson, anchors.json
-	2.	Technical verification passes
-	•	AAL hash chain is intact
-	•	Anchors match the AAL digest
-	•	No tampering detected
-	3.	Damage is documented
-	•	Receipts, bank records, insurer statement, or equivalent
-	•	Amount is ≥ threshold
-	4.	Causality is clear
-	•	There is a plausible link between AI decision and damage
-	•	Human reviewer (or encoded rule) confirms the link is not speculative
+The Incident Protocol specifies when and how SLO-Bonds are triggered.
 
-If any of these fail, the protocol MAY be used as guidance,
-but automatic SLO-Bond payment is NOT mandatory.
+3.4 Roles
+
+Key roles in an incident:
+	•	Subject – person(s) harmed by the AI-involved system
+	•	Operator – organisation that runs the system
+	•	Vendor – model / tool provider(s)
+	•	Insurer / Guarantor – entity backing SLO-Bonds
+	•	Regulator / Auditor – oversight bodies
+
+This spec is neutral about who combines which roles in practice.
 
 ⸻
 
-Payment execution
+4. Lifecycle (v0.1)
 
-Tier 1 — Automatic (¥10,000–¥1,000,000)
+Minimal incident lifecycle:
+	1.	Detection – something may be wrong
+	2.	Triage – is this in scope? does it cross the threshold?
+	3.	Evidence freeze – pin relevant Evidence Bundles
+	4.	Attribution – which systems / policies / actors are responsible?
+	5.	Remedy calculation – how much compensation / what actions?
+	6.	Execution – payments via Proof Rail, system changes
+	7.	Human-Readable Proof – narrative for subjects / public
+	8.	Closure – mark as resolved, with follow-up checks
 
-For damage between ¥10,000 and ¥1,000,000:
-	•	Payment SHOULD be executed automatically by smart contract or equivalent
-	•	Target execution time: within 24 hours after:
-	•	Evidence verification = OK
-	•	Attribution vector = agreed or computed
+4.1 Detection
 
-The amounts are:
+Incidents MAY be detected by:
+	•	subjects (complaints, appeals)
+	•	operators (monitoring, internal review)
+	•	regulators / auditors (inspections)
+	•	automated anomaly detection
 
-Payment_AI        = Damage * Attribution_AI
-Payment_Operator  = Damage * Attribution_Operator
-Payment_User      = Damage * Attribution_User  (usually 0)
+Each detection creates a preliminary record with:
+	•	timestamp_detected
+	•	reporter type (subject / operator / regulator / other)
+	•	short description
 
-Payments for User share are only allowed when:
-	•	Misuse or bad faith is clearly documented, and
-	•	This condition is compatible with local law and consumer protection.
+4.2 Triage
 
-Tier 2 — Manual review (≥¥1,000,000)
+The operator (or designated handler) MUST decide:
+	•	Is AI involvement plausible?
+	•	Does it cross the harm threshold?
+	•	Is it obviously out-of-scope (e.g. mis-typed account number)?
 
-For damage ≥ ¥1,000,000:
-	•	Future Novara Foundation (or equivalent neutral body) MUST review
-	•	Recommended timeline: 7–30 days
-	•	Parties MAY submit extra evidence or arguments
-	•	Partial payments MAY be executed earlier if undisputed portion is clear
+Outcomes:
+	•	NO_INCIDENT – logged but not escalated
+	•	INCIDENT_OPENED – full Incident created
+
+4.3 Evidence freeze
+
+For INCIDENT_OPENED, the handler MUST:
+	•	identify relevant Evidence Bundles (dates, subjects, systems)
+	•	pin them by ID in the incident record
+	•	ensure bundles are preserved (no deletion, retention ok)
+
+Where possible, additional logs may be snapshotted
+but the canonical reference SHOULD be Evidence Bundles.
+
+4.4 Attribution
+
+Attribution answers:
+	•	Which system(s) and policy version(s) contributed?
+	•	Was the primary failure in:
+	•	model behaviour,
+	•	policy design,
+	•	implementation / integration,
+	•	monitoring / operations, or
+	•	external constraints?
+
+Attribution SHOULD be:
+	•	explicit (e.g. percentage weight or primary/secondary tags)
+	•	backed by references to bundles, configs, and policies
+
+4.5 Remedy calculation
+
+Based on:
+	•	contract terms (insurance, credit, subsidy, etc.)
+	•	active SLO-Bond definitions
+	•	regulatory requirements
+
+The handler computes:
+	•	baseline compensation (what should have happened)
+	•	additional compensation (harm, delay, etc.)
+	•	which SLO-Bond(s) are charged
+
+The calculation SHOULD be expressible as:
+
+amount_due = f(harm, delay, policy, SLO-Bond)
+
+and logged in the incident.
+
+4.6 Execution (via Proof Rail)
+
+Payments triggered by an incident MUST:
+	•	be executed through Novara Proof Rail where available
+	•	reference both:
+	•	incident_id and
+	•	proof_token from the rail
+
+Non-monetary remedies (e.g. record correction)
+SHOULD still be logged with references to Evidence Bundles.
+
+4.7 Human-Readable Proof
+
+For confirmed incidents, the operator SHOULD:
+	•	generate a Human-Readable Proof document (v0.1)
+	•	link it to the incident by ID
+	•	provide it to subjects and regulators
+
+The incident record MUST store:
+	•	hrp_id (e.g. nvr-hrp-2025-000045)
+	•	language(s) available
+	•	publication / delivery date
+
+4.8 Closure
+
+An incident MAY be closed when:
+	•	remedy has been executed, and
+	•	Human-Readable Proof has been generated (if required), and
+	•	follow-up checks (if any) have been performed.
+
+The closure record MUST include:
+	•	status (CLOSED / PARTIALLY_CLOSED / ESCALATED)
+	•	final timestamps
+	•	who authorised closure
 
 ⸻
 
-SLO-Bond requirements
+5. Minimum incident record
 
-Each conformant AI deployment SHOULD maintain:
-	•	Minimum SLO-Bond: ¥10,000,000 per deployment
-	•	Bonds MUST be:
-	•	Segregated from operating funds
-	•	Dedicated to incident remedy only
-	•	Transparent (public or regulator-visible balance)
+A conformant implementation MUST be able to represent at least:
 
-When bond balance < 50%:
-	•	Operator MUST replenish within a defined grace period (e.g. 30 days)
-	•	New high-risk features SHOULD NOT be rolled out until replenished
+{
+  "incident_id": "nvr-inc-2025-000123",
+  "status": "OPEN",
+  "subject_ids": ["customer:12345"],
+  "detected_at": "2025-11-19T10:15:00Z",
+  "detected_by": "SUBJECT",
+  "system_id": "claims-ai-v3",
+  "policy_id": "claims-policy-v7",
+  "harm_summary": "Claim for accident on 2025-10-25 was wrongly denied.",
+  "estimated_harm_amount": {
+    "value": 40000,
+    "currency": "JPY"
+  },
+  "evidence_bundles": [
+    "nvr-eb-2025-10-25-000045",
+    "nvr-eb-2025-10-26-000012"
+  ],
+  "attribution": {
+    "primary_cause": "OUTDATED_POLICY",
+    "secondary_causes": ["MISSING_MONITORING"]
+  },
+  "remedy": {
+    "amount_due": {
+      "value": 40000,
+      "currency": "JPY"
+    },
+    "slo_bond_ids": ["slo-bond-claims-delay-v1"],
+    "non_monetary": ["Correct claim status", "Update policy threshold"]
+  },
+  "payments": [
+    {
+      "proof_token": "nvrp:2025-11-19:rail-01:abcd1234",
+      "rail_decision": "ALLOW"
+    }
+  ],
+  "hrp_id": "nvr-hrp-2025-000045",
+  "closed_at": null
+}
+
+Implementations MAY add fields,
+but MUST NOT repurpose these for different meanings.
 
 ⸻
 
-Escalation
-
-If any party disputes the result:
-	1.	Mediation (optional)
-	•	Non-binding, facilitated by neutral third party
-	2.	Arbitration (binding, if agreed)
-	•	Fast-track, with limited scope:
-	•	Evidence validity
-	•	Attribution vector
-	•	Damage amount
-	3.	Court system (jurisdiction-dependent)
-	•	Always available as a last resort
-	•	This protocol is intended to reduce, not remove, legal rights
+6. Security and privacy
+	•	Incident records SHOULD avoid storing raw sensitive content
+when equivalent pseudonymous references are possible.
+	•	Links to Evidence Bundles SHOULD respect data protection laws
+(e.g. retention limits, access controls).
+	•	Access to incident records SHOULD be role-based and auditable.
 
 ⸻
 
-Public reporting
+7. Conformance levels
 
-For each incident that triggers this protocol, operators SHOULD publish:
-	•	Incident ID (pseudonymous if needed)
-	•	Date and domain (medical, finance, etc.)
-	•	Damage amount (rounded)
-	•	Attribution vector (AI / Operator / User)
-	•	Status: resolved / pending / disputed
-
-This enables:
-	•	Pattern detection (e.g. repeated failure modes)
-	•	Risk pricing
-	•	Public and journalistic oversight
+We define indicative levels:
+	•	Level 0 – No Incident Protocol
+	•	Incidents are handled ad-hoc, no structured link to evidence.
+	•	Level 1 – Internal Novara Incidents
+	•	Incidents are logged with IDs and bundle references.
+	•	Remedy is executed but not yet transparently reported.
+	•	Level 2 – Public Novara Incidents
+	•	Same as Level 1, plus:
+	•	aggregated stats are published (counts, categories, amounts),
+	•	Human-Readable Proof is produced for major incidents.
+	•	Level 3 – Full Novara Integration (target)
+	•	Integrated with:
+	•	Novara Proof Rail for payouts
+	•	SLO-Bond accounting
+	•	public dashboards for regulators and auditors
 
 ⸻
 
-Revision history
+8. Revision history
 	•	v0.1.0 — initial draft (2025-11-19)
 
 ⸻
 
 This document is dedicated to the public domain via CC0 1.0.
-It may be copied, modified, and integrated into other governance systems
+It may be copied, modified, and integrated into other systems
 without permission or attribution.
