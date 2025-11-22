@@ -66,7 +66,6 @@ Format example:
 
 ```text
 nvrp:2025-11-19:rail-01:abcd1234
-```
 
 It MUST allow the auditor to find the corresponding Evidence Bundle.
 
@@ -110,7 +109,7 @@ The payment processor MUST:
 	6.	Audit
 Later, auditors can take:
 	•	payment record → proof_token → Evidence Bundle
-	•	re-run verification offline using Pocket Judge / Atlas
+	•	re-run verification offline using Pocket Judge / similar verifier
 
 ⸻
 
@@ -190,8 +189,7 @@ To keep the bar progressive, we define three levels:
 	•	Evidence Bundles are stored but not yet public.
 	•	Level 2 – Public Proof Rail (recommended)
 	•	Same as Level 1, plus:
-	•	aggregated stats are published
-(number of payments, total amount, failure reasons)
+	•	aggregated stats are published (number of payments, total amount, failure reasons)
 	•	regulators and auditors get direct read-only access
 	•	Level 3 – Full Novara Integration (target)
 	•	Proof Rail integrated with:
@@ -209,4 +207,3 @@ To keep the bar progressive, we define three levels:
 This document is dedicated to the public domain via CC0 1.0.
 It may be copied, modified, and integrated into other systems
 without permission or attribution.
- 
