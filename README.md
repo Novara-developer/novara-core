@@ -18,7 +18,7 @@ These are the “v0.1 canon” for Novara:
 - **[Novara Human-Readable Proof v0.1](docs/constitution/novara-human-readable-proof-v0.1-spec.md)**  
   Plain-language narratives for victims, regulators, and the public.
 
-- **[Novara Incident Protocol v0.1](docs/constitution/novara-incident-protocol-v0.1-spec.md)**  
+- **[Novara Incident Protocol v0.1](docs/protocols/novara-incident-protocol-v0.1-spec.md)**  
   How harms are recorded, attributed, and remedied via SLO-Bonds.
 
 - **[Novara Proof Rail v0.1](docs/protocols/novara-proof-rail-v0.1-spec.md)**  
@@ -151,5 +151,3 @@ All texts in this repository are dedicated to the public domain under **CC0 1.0*
 
 You may copy, modify, translate, and integrate them into other systems  
 without permission or attribution, including for commercial and governmental use.
-
- 
