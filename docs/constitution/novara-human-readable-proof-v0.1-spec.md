@@ -1,123 +1,254 @@
 # Novara Human-Readable Proof v0.1
 
-**Status:** Specification Draft  
+**Status:** Draft  
 **Version:** 0.1.0  
 **Date:** 2025-11-19  
 **License:** CC0 1.0 (Public Domain)
 
 ---
 
-## Goal and Context
+## 1. Purpose
 
-Technical evidence bundles are for machines and auditors. **Victims and the public need plain-language explanations.**
+This spec defines how to turn technical evidence  
+(Evidence Bundles, Proof Rail records, policies)  
+into a **human-readable narrative**.
 
-This document defines three human-facing views of an incident, ensuring accountability is understood by all stakeholders:
+The audience:
 
-1. **Victim View** – for the person who was harmed
-2. **Public View** – for community and regulators
-3. **Journalist View** – for investigative reporting
+- people harmed by AI-driven decisions (subjects)  
+- regulators, judges, ombuds, journalists  
+- the general public
 
-It is implementation-neutral and must be read together with the Novara Core documents.
+Goal:
 
----
-
-## 1. Victim View: Remedy for the Harmed
-
-**Goal:** Help the victim understand, in simple language: what happened, how it harmed them, and what will be done to fix it.
-
-A minimum victim-facing report **MUST** contain:
-
-### 1.1. What Happened
-
-* One or two short paragraphs.
-* **No technical jargon.**
-* Clear description of the AI decision and the context of the harm.
-
-### 1.2. Impact on You
-
-* Financial impact (amount, currency).
-* Time lost (hours, days).
-* Other quantifiable harm (e.g., stress, loss of access to critical services).
-
-### 1.3. What We Found (Attribution)
-
-* AI system name and version.
-* The specific decision or recommendation the AI made.
-* The primary reason that decision was found to be wrong or harmful.
-* Attribution split (Was this mainly AI fault, Operator fault, or both?).
-
-### 1.4. Your Remedy
-
-* Payment amount and currency.
-* How and when the payment will be executed (Tier 1 vs. Tier 2 protocol).
-* Any non-financial remedy (e.g., apology, data correction, systemic fix).
-
-Operators **SHOULD** provide this in the victim’s preferred language where possible.
+> After reading one Human-Readable Proof,  
+> a non-technical person should understand  
+> **what happened, who pays, and what will change.**
 
 ---
 
-## 2. Public View: Risk Monitoring
+## 2. Scope
 
-**Goal:** Allow the public to monitor patterns and systemic risk **without** exposing personal data.
+This document applies when:
 
-For each incident that triggers the Novara Incident Protocol, a public record **SHOULD** include at least:
+- a Novara-compatible system has produced one or more **Evidence Bundles**, and  
+- an incident, dispute, or large payout has occurred, and  
+- a subject or regulator requests **an explanation in plain language**.
 
-* Incident ID (pseudonymous if needed).
-* Date of incident and the Domain (e.g., medical, finance, hiring).
-* AI system name and version (or family).
-* Damage amount (rounded).
-* **Attribution vector (AI / Operator / User percentages).**
-* Status (resolved / pending / disputed).
+It does **not** define:
 
-This public view **SHOULD** be publishable as an open dashboard and a machine-readable feed (JSON, CSV).
+- the full legal judgement text,  
+- PR statements, or  
+- deep forensic reports for engineers.
 
----
-
-## 3. Journalist View: Accountability Access
-
-**Goal:** Support investigative journalism and accountability reporting, without compromising victim privacy.
-
-With proper justification, accredited journalists **MAY** request:
-
-* **Redacted evidence bundle** (with personal data removed or masked).
-* Model and policy version that were active at the time of the incident.
-* Statistics on similar incidents in the last N months.
-* Explanation of systemic changes made since the incident (model, policy, process).
-
-Requests **SHOULD** include the journalist's identity, affiliation, purpose of the investigation, and the Incident ID(s) of interest.
+It defines the **minimum standard** for a public-facing explanation.
 
 ---
 
-## 4. The Seven Green Checks (Proof of Verification)
+## 3. Core principles
 
-For any case that claims to be **“Novara-verified”**, the following seven checks **MUST** all be true:
+Human-Readable Proofs MUST follow these principles:
 
-1.  **Evidence bundle exists:** A verifiable Novara Evidence Bundle (v0.1+) is stored and accessible.
-2.  **Hash chain intact:** AAL hash chain verifies end-to-end.
-3.  **Timestamps consistent:** No impossible jumps, gaps, or rewrites in the timeline.
-4.  **Policy and model specified:** Model version and policy hash are clearly recorded within the bundle.
-5.  **Attribution sums to 1.0:** AI / Operator / User fractions (Attribution vector) add up precisely to 1.0.
-6.  **Damage documented:** Financial or other harm is backed by external records (Receipts, insurer statement, etc.).
-7.  **Payment executed or scheduled:** SLO-Bond payment is confirmed, or a clear schedule exists according to the Incident Protocol.
+1. **Truthful to the evidence**  
+   - Every claim in the story MUST be traceable  
+     to a cryptographically verifiable artefact  
+     (bundle, policy, Proof Rail record, etc.).
 
-If any of these checks fail, the case **MUST NOT** be advertised as **“Novara-verified”** without an explicit disclaimer.
+2. **Plain language first**  
+   - Use short sentences and common terms.  
+   - Avoid jargon unless it is explained in-place.
 
----
+3. **No “mystical AI” language**  
+   - Do not say “the AI decided on its own”  
+     without specifying the operator, model, and policy context.
 
-## 5. Relationship to Core Documents
+4. **Respect for subjects**  
+   - Do not blame or shame individuals in the narrative.  
+   - Be precise about system and organisational errors.
 
-This specification is a mandatory companion to technical evidence and must be read with:
-
-* **Novara Incident Protocol v0.1:** Defines damage thresholds, attribution calculation, and payment execution logic.
-* **Novara Constitution v0.1:** Defines the core principles (Evidence Sovereignty, Independence, etc.).
-* **Novara Evidence Bundle v0.1:** Defines the technical log format (`aal.ndjson`, `anchors.json`).
-
----
-
-## Revision History
-
-* v0.1.0 — initial draft (2025-11-19)
+5. **Actionable outcome**  
+   - Clearly state what compensation and changes are triggered,  
+     according to the Incident Protocol and SLO-Bonds.
 
 ---
 
-This document is dedicated to the public domain via **CC0 1.0**.
+## 4. Document structure (v0.1)
+
+A Human-Readable Proof SHOULD follow this structure:
+
+1. **Header / summary block**  
+2. **Timeline of events**  
+3. **What went wrong (root cause, simplified)**  
+4. **Who is responsible for what**  
+5. **What compensation is owed**  
+6. **What will change to reduce future harm**  
+7. **Technical appendix (short)**
+
+### 4.1 Header / summary block
+
+At the top, a short summary in 5–10 lines:
+
+- Incident ID  
+- Date range  
+- System / product name  
+- Type of harm (e.g. *wrongly denied claim*, *overcharge*, *privacy leak*)  
+- Short summary (2–3 sentences)  
+- One-line outcome (e.g. *“Your claim is now approved and we will pay ¥40,000.”*)
+
+Example:
+
+> On 2025-10-12, our claims AI wrongly rejected your insurance claim.  
+> This was caused by an outdated risk policy that we failed to update.  
+> We have now approved your claim. You will receive ¥40,000 within 7 days.
+
+### 4.2 Timeline of events
+
+Chronological list of key events,  
+with human-readable times and references to evidence:
+
+- When the subject submitted data / request  
+- When the AI system processed it  
+- When a decision was made and by which model/policy  
+- When payments were blocked or executed  
+- When the issue was detected and by whom
+
+Each event SHOULD be linked (by ID)  
+to AAL entries or specific bundles.
+
+### 4.3 What went wrong
+
+A short explanation of:
+
+- wrong model / threshold / policy / data, and  
+- why the system behaved in that way at the time.
+
+This section MUST:
+
+- avoid purely abstract blame like “the algorithm failed”, and  
+- name at least one concrete factor (e.g. outdated policy version,  
+  misconfigured threshold, missing data validation).
+
+### 4.4 Who is responsible for what
+
+Clear attribution across roles:
+
+- Operator responsibilities (e.g. monitoring, policy updates)  
+- Vendor responsibilities (e.g. model release notes, safety limits)  
+- Any third parties (e.g. data providers, integrators)
+
+If SLO-Bonds are in place,  
+this section SHOULD mention which bond(s) are triggered.
+
+### 4.5 What compensation is owed
+
+A concrete statement of:
+
+- what is being paid (amount, currency, timing),  
+- under which contract / SLO / policy,  
+- any additional non-monetary remedies  
+  (e.g. record correction, apology, service change).
+
+Where relevant, link to **Proof Rail** decisions that authorised the payment.
+
+### 4.6 What will change
+
+Practical changes the operator commits to:
+
+- model updates or rollbacks  
+- policy changes  
+- new monitoring or limits  
+- timelines for these changes
+
+This SHOULD be written so that future audits  
+can check whether the promised changes actually happened.
+
+### 4.7 Technical appendix (short)
+
+A short, optional section for more technical readers:
+
+- Incident bundle IDs (one or more Evidence Bundles)  
+- Relevant decision IDs  
+- Proof Rail proof_tokens  
+- Policy IDs / versions  
+- Anchors (e.g. CTK-2 references)
+
+This appendix SHOULD be enough for an independent auditor  
+to go from the narrative back to raw evidence.
+
+---
+
+## 5. Input and output
+
+### 5.1 Inputs
+
+To generate a Human-Readable Proof, a system will typically consume:
+
+- One or more **Novara Evidence Bundles**  
+- Proof Rail records (payments allowed / denied)  
+- Incident records (from Novara Incident Protocol)  
+- Policy definitions and SLO-Bond contracts
+
+### 5.2 Output
+
+The output is a **renderable document**:
+
+- text/markdown, HTML, or PDF,  
+- ideally in multiple languages when needed,  
+- with stable identifiers so it can be cited in cases.
+
+The document SHOULD be:
+
+- stored alongside the technical evidence, and  
+- referenced in any public or regulatory communications about the incident.
+
+---
+
+## 6. Language and accessibility
+
+### 6.1 Reading level
+
+Human-Readable Proofs SHOULD target  
+a reading level roughly equivalent to B1–B2 in CEFR:
+
+- short paragraphs  
+- minimal nested clauses  
+- common words where possible
+
+### 6.2 Multi-lingual
+
+Where subjects are multi-lingual,  
+operators SHOULD provide the narrative:
+
+- in the subject’s primary language where feasible, and  
+- in at least one widely used lingua franca (e.g. English).
+
+If translations exist,  
+their relationship SHOULD be logged (e.g. translation of HRP-2025-0001-en).
+
+---
+
+## 7. Conformance
+
+An implementation MAY claim:
+
+- **“Human-Readable Proof compatible (v0.1)”**  
+  if it generates documents that:
+
+  - follow the structure in §4,  
+  - obey principles in §3, and  
+  - link all factual claims to Novara evidence.
+
+If parts are omitted (e.g. no compensation section),  
+the reason SHOULD be explicitly stated in the document.
+
+---
+
+## 8. Revision history
+
+- v0.1.0 — initial draft (2025-11-19)
+
+---
+
+This spec is dedicated to the public domain under **CC0 1.0**.  
+You may copy, modify, or integrate it into other systems  
+without permission or attribution.
