@@ -1,209 +1,133 @@
-# Novara Proof Rail v0.1
+# Novara proof rail v0.1 spec
 
-**Status:** Specification Draft  
-**Version:** 0.1.0  
-**Date:** 2025-11-19  
-**License:** CC0 1.0 (Public Domain)
+目的  
+支払い、権利付与、重要なステータス変更などの前に  
+有効な Evidence Bundle が存在するかをチェックし、  
+条件を満たさないトランザクションを止めるための最小仕様を定義する。
 
----
+本 spec は v0.1 の実装用。  
+将来の金融インフラ連携では v1.x で厳格化する。
 
-## 1. Overview
+## 1. 基本コンセプト
 
-The **Novara Proof Rail** is a payment gate.
+Proof rail は「支払い API ではなく、その前段に挟むフィルター」。
 
-Any money flow that is **caused by an AI decision**  
-MUST pass through a Proof Rail checkpoint **before** funds are released.
+- 入力  
+  支払いや権利変更のリクエスト  
+- 内部で見るもの  
+  関連する Evidence Bundle とポリシー  
+- 出力  
+  許可、保留、拒否 の三値と、その理由コード
 
-Goal:
+支払い処理そのものは別システムが担当する。
 
-- If an AI decision moves money,  
-  there MUST be a **verifiable evidence trail** behind it.
+## 2. リクエスト形式
 
-This document is implementation-neutral and is designed to work together with:
+抽象レベルの必須フィールド
 
-- **Novara Evidence Bundle v0.1** (technical evidence format)  
-- **Novara Incident Protocol v0.1** (remedy & SLO-Bond execution)  
-- **CTK-2 mini** (commitment & anchoring profile)
+- request_id  
+- subject_id  
+- amount または権利変更の内容  
+- currency または対象リソース  
+- evidence_bundle_id  
+- policy_id  
+- requested_at
 
----
+実際のフィールド名や追加項目は各実装で拡張してよいが、  
+上記に相当する情報が無いリクエストは受理してはならない。
 
-## 2. Scope
+## 3. レスポンス形式
 
-Proof Rail applies to payments where all are true:
+レスポンスは次の三値のどれか。
 
-1. An AI system produced a decision or recommendation, and  
-2. That decision directly triggers or authorises a payment, transfer, or pricing change, and  
-3. The amount is **≥ ¥10,000** (or local equivalent).
+- APPROVE  
+- HOLD  
+- REJECT  
 
-Examples:
+共通フィールド
 
-- Insurance payout approved by AI  
-- Loan approval / rejection decision  
-- Government subsidy or grant decided by AI  
-- High-value ad bidding / settlement driven by AI  
-- Automated compensation under the Novara Incident Protocol
+- request_id  
+- decision  
+- decision_reason_code  
+- decided_at  
+- evidence_summary  
+  例  
+  使用された Evidence Bundle のハッシュと、確認したチェックリストの結果
 
----
+decision_reason_code は機械処理用の短いコードとし、  
+人間向け説明は別途 human readable proof 側で扱う。
 
-## 3. Core concepts
+## 4. チェック項目 v0.1
 
-### 3.1 Proof Rail Checkpoint
+最低限、次の条件をすべて満たした場合のみ APPROVE としてよい。
 
-A service that sits **between**:
+一 Evidence Bundle が検証成功  
+  hash チェーン、anchors、署名など、当該バージョンの spec が要求する項目が全て ok。
 
-- The AI decision system, and  
-- The payment / settlement system.
+二 bundle 内に該当トランザクションの AAL レコードが存在  
+  request_id または同等のキーでひも付け可能であること。
 
-It enforces this rule:
+三 適用ポリシーが有効期間内  
+  policy_id に対応するポリシーが、requested_at の時点で有効である。
 
-> **No valid proof → No money flow.**
+四 上限チェック  
+  同一 subject に対する累積額や回数が、ポリシーで定めた上限内である。
 
-### 3.2 Proof Token
+いずれかが満たされない場合は HOLD または REJECT を返す。
 
-A short identifier that links a payment to its evidence.
+## 5. AAL への記録
 
-Format example:
+Proof rail 自身も AAL に次のレコードを残す。
 
-```text
-nvrp:2025-11-19:rail-01:abcd1234
+- kind が proof_rail_decision  
+- 対応する request_id  
+- decision  
+- decision_reason_code  
+- evidence_bundle_id  
+- policy_id  
+- decided_at
 
-It MUST allow the auditor to find the corresponding Evidence Bundle.
+このログによって  
+「なぜその支払いが通ったか、または止まったか」が後から検証できる。
 
-3.3 Evidence Bundle Requirement
+## 6. 失敗モード
 
-Every Proof Rail–protected payment MUST point to a Novara Evidence Bundle v0.1+,
-containing at minimum:
-	•	meta.json – system, model, policy, time window
-	•	aal.ndjson – AI Action Ledger entries
-	•	anchors.json – external anchors (blockchain / TEE / TSA / CTK-2 mini, etc.)
+Proof rail が正常に判定できない場合の扱いを固定する。
 
-The bundle MUST verify using standard Novara tools.
+代表的な失敗例
 
-⸻
+- Evidence Bundle 検証に必要なライブラリの障害  
+- バンドルが取得できない  
+- 内部ストレージの障害
 
-4. Protocol flow (happy path)
+原則
 
-Minimal flow for a conformant implementation:
-	1.	AI decision
-	•	AI system produces a decision (e.g. APPROVE_LOAN, PAY_CLAIM).
-	•	System writes to AAL and seals a CTK-2 mini record.
-	2.	Proof request
-	•	Payment system calls the Proof Rail with:
-	•	proposed payment details (payer, payee, amount, currency)
-	•	AI decision_id
-	•	CTK-2 mini reference (or bundle_id)
-	3.	Verification
-Proof Rail MUST verify:
-	•	A valid Evidence Bundle exists
-	•	AAL hash chain is intact up to the decision
-	•	Anchors in anchors.json match the bundle hash
-	•	Decision type is authorised to trigger this kind of payment
-	•	Amount is within allowed bounds for this decision type
-	4.	Decision
-	•	If all checks pass → ALLOW with a proof_token
-	•	If any check fails → DENY with a clear reason_code
-	5.	Payment
-The payment processor MUST:
-	•	record the proof_token in its own ledger
-	•	refuse to execute if no valid ALLOW is present
-	6.	Audit
-Later, auditors can take:
-	•	payment record → proof_token → Evidence Bundle
-	•	re-run verification offline using Pocket Judge / similar verifier
+- 証拠が確認できない場合はデフォルトで HOLD か REJECT  
+- 「証拠が無いが通した」という状態は v0.1 では許容しない
 
-⸻
+実装側は failure_mode フィールドで  
+どのクラスの障害だったかを記録すること。
 
-5. Minimum data fields
+## 7. SLO ボンドとの関係
 
-A conformant Proof Rail implementation MUST store at least:
+Proof rail は次をトリガーとして扱う。
 
-{
-  "proof_token": "nvrp:2025-11-19:rail-01:abcd1234",
-  "decision_id": "dec-2025-11-19-00123",
-  "bundle_id": "nvr-eb-2025-11-19-000045",
-  "amount": {
-    "value": 50000,
-    "currency": "JPY"
-  },
-  "payer": "insurer:xyz",
-  "payee": "customer:12345",
-  "decision_type": "INSURANCE_PAYOUT",
-  "rail_decision": "ALLOW",
-  "reason_code": "OK",
-  "timestamp_rail": "2025-11-19T12:34:56Z"
-}
+- REJECT や HOLD が一定割合を超えた場合  
+- 特定の decision_reason_code が異常に多い場合
 
-Implementations MAY add more fields,
-but MUST NOT remove or repurpose these.
+この情報は別途 SLO ボンドや保険の ratecard に渡される。  
+本 spec v0.1 では連携の詳細までは規定しないが、  
+将来の拡張で証拠として利用できるよう、  
+メトリクスを継続的に AAL に流すことだけ定める。
 
-⸻
+## 8. バージョニング
 
-6. Failure modes and handling
+Proof rail のバージョンと、対応する Evidence Bundle spec のバージョンを  
+次のように管理する。
 
-6.1 Missing or invalid bundle
+- 本文書は proof_rail v0.1  
+- 対応する Evidence Bundle は v0.9 から v1.0 を想定  
+- 互換性が破れる変更が入る場合は v1.x として別文書を作成する
 
-If the Evidence Bundle is missing or fails verification:
-	•	Proof Rail MUST return DENY with reason_code one of:
-	•	NO_BUNDLE
-	•	ANCHOR_MISMATCH
-	•	AAL_BROKEN_CHAIN
-	•	Payment processor MUST NOT execute the payment.
-
-Optional: the system MAY route the case to manual review.
-
-⸻
-
-6.2 Amount mismatch
-
-If the requested payment amount does not match the amount in the AI decision context:
-	•	Proof Rail MUST return DENY with reason AMOUNT_MISMATCH.
-	•	Operator MUST log and investigate for possible fraud or mis-implementation.
-
-⸻
-
-6.3 Policy violation
-
-If the decision violates active policy (e.g. wrong product, excluded risk):
-	•	Proof Rail MUST return DENY with reason POLICY_VIOLATION.
-	•	System SHOULD generate a candidate Novara Incident for review.
-
-⸻
-
-7. Security and privacy
-	•	Proof Rail SHOULD be deployed in a hardened environment
-(e.g. TEE, HSM-protected keys).
-	•	Personally identifiable data SHOULD NOT be stored in the Proof Rail database;
-only pseudonymous IDs.
-	•	All Proof Rail decisions SHOULD be appended to an AAL stream for later audit.
-	•	Access to Proof Rail APIs SHOULD be authenticated and rate-limited.
-
-⸻
-
-8. Conformance levels
-
-To keep the bar progressive, we define three levels:
-	•	Level 0 – Non-conformant
-	•	AI decisions move money with no proof requirement.
-	•	Level 1 – Basic Proof Rail
-	•	Each payment requires a valid proof_token.
-	•	Evidence Bundles are stored but not yet public.
-	•	Level 2 – Public Proof Rail (recommended)
-	•	Same as Level 1, plus:
-	•	aggregated stats are published (number of payments, total amount, failure reasons)
-	•	regulators and auditors get direct read-only access
-	•	Level 3 – Full Novara Integration (target)
-	•	Proof Rail integrated with:
-	•	Novara Incident Protocol (automatic remedy)
-	•	SLO-Bond accounting
-	•	CTK-2 global evidence mesh
-
-⸻
-
-9. Revision history
-	•	v0.1.0 — initial draft (2025-11-19)
-
-⸻
-
-This document is dedicated to the public domain via CC0 1.0.
-It may be copied, modified, and integrated into other systems
-without permission or attribution.
+トランザクションごとに  
+使用した proof rail バージョンを AAL に記録すること。
