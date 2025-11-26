@@ -1,272 +1,141 @@
-# Novara Incident Protocol v0.1
+# Novara 事故対応プロトコル v0.1 spec
 
-**Status:** Specification Draft  
-**Version:** 0.1.0  
-**Date:** 2025-11-19  
-**License:** CC0 1.0 (Public Domain)
+目的  
+AI システムが harm を出したときに  
+誰が何を、どのタイミングで、どこまで公開するか  
+という最低限のフローを固定する。
 
----
+この文書は v0.1 の叩き台。  
+実プロジェクトでの学びを反映して v1.x で正式化する前提。
 
-## 1. Overview
+## 0. 適用範囲
 
-The **Novara Incident Protocol** defines how harms caused by AI-assisted systems are:
+次の条件を満たすインシデントでは、本プロトコルが必須となる。
 
-1. detected and recorded,  
-2. attributed to actors, models, and policies, and  
-3. remedied via **SLO-Bonds** and other pre-agreed mechanisms.
+- AI システムが直接または間接に金銭、権利、信用に影響した  
+- Novara Evidence Bundle または互換フォーマットでログが残っている  
+- 影響額が事前に定めたしきい値以上である
 
-Goal:
+しきい値例
 
-- When something goes wrong in an AI-driven system,  
-  the path from *harm* → *evidence* → *attribution* → *payment*  
-  SHOULD be predictable, auditable, and explainable to the public.
+- 金銭 harm 一件あたり一万円相当以上  
+- 信用スコアや契約可否に関わる判定  
 
-This document is implementation-neutral and is designed to work together with:
+具体的なしきい値は各システムのポリシーで事前公開する。
 
-- **Novara Evidence Bundle v0.1** – technical evidence format  
-- **Novara Proof Rail v0.1** – “no valid proof, no money flow” payment gate  
-- **Novara Human-Readable Proof v0.1** – narrative output for humans  
-- **Novara Constitution v0.1** – core principles and thresholds
+## 1. タイムライン
 
----
+T0 はインシデント発見時刻とする。
 
-## 2. Scope
+- T0 から二十四時間  
+  初期封じ込めと事実の固定  
+- T0 から七十二時間  
+  被害者への暫定説明  
+- T0 から七日  
+  原因分析メモの完成  
+- T0 から三十日  
+  人間向け証拠パックの提供
 
-The Incident Protocol applies when **all** of the following are true:
+このタイムラインを満たせない場合、その理由を AAL に記録すること。
 
-1. An AI-assisted system **contributed** to a decision or action, and  
-2. A person, organisation, or the public experienced **harm** (financial or non-financial), and  
-3. The harm crosses a **materiality threshold** defined in policy (e.g. ≥ ¥10,000 or equivalent), and  
-4. There exists (or SHOULD exist) a Novara Evidence Bundle covering the relevant time window.
+## 2. ロール
 
-Examples:
+最低限次の役割を置く。
 
-- An AI claims handler underpays an insurance claim.  
-- A loan scoring model wrongly rejects a credit application.  
-- An AI-powered subsidy allocation system unfairly excludes a group.  
-- A content moderation model wrongfully blocks a creator’s revenue for a significant period.
+- Incident Lead  
+  全体の責任者。技術とビジネスの橋渡しを行う。  
+- Evidence Steward  
+  Evidence Bundle の凍結、再生成、公開に責任を持つ。  
+- User Advocate  
+  被害者側の視点を代表し、窓口となる。  
+- Independent Reviewer  
+  別組織または外部の技術者。証拠の読み合わせ役。
 
-Non-examples (outside Protocol scope, but MAY be logged for analytics):
+Incident Lead と Independent Reviewer を同一人物にすることは禁止。
 
-- Pure UX annoyances with no measurable harm.  
-- Incidents purely internal to a company with no external impact and below thresholds.  
-- Events unrelated to AI assistance (purely human decisions).
+## 3. T0 から二十四時間
 
----
+必須ステップ
 
-## 3. Core concepts
+一 インシデント登録  
+  AAL に kind フィールドが incident_reported のレコードを追加する。  
+  必須フィールド  
+  incident_id  
+  detected_at  
+  reporter  
+  suspected_harm_type  
+  related_bundle_ids
 
-### 3.1 Incident
+二 Evidence Bundle の凍結  
+  該当日の Evidence Bundle を凍結版として保存する。  
+  書き換えを防ぐため、オフライン媒体へのコピーも推奨。
 
-An **Incident** is a structured record that connects:
+三 ダメージ拡大の抑制  
+  モデルやポリシーのロールバック、関連フローの一時停止を行う。  
+  これらの操作も AAL に記録する。
 
-- one or more **harms**,  
-- the relevant **evidence bundles**, and  
-- the resulting **remedies** (payments, reversals, policy changes).
+## 4. T0 から七十二時間
 
-An Incident is **not** the same as a single log entry.  
-It is a higher-level object that can be revisited, re-opened, and referenced in public reports.
+影響を受けたユーザーに暫定説明を行う。  
+最低限含める内容
 
-### 3.2 Harm
+- 何が起きたと認識しているか  
+- 影響があり得る対象範囲  
+- これまでに行った安全措置  
+- 今後の調査と補償のタイムライン  
+- 問い合わせ窓口
 
-A **harm** is any negative outcome that crosses the configured materiality threshold, including:
+原因を単に AI モデルのせいとするだけの説明は禁止。  
+意思決定チェーンと Evidence Bundle の存在まで触れること。
 
-- direct financial loss (e.g. underpaid claim, wrongly denied payout),  
-- opportunity loss (e.g. unfair rejection of a loan),  
-- systematic bias or discrimination (e.g. protected group consistently disadvantaged),  
-- reputational or civic harm (e.g. wrongful labelling or exclusion).
+## 5. T0 から七日
 
-Each harm MUST have a clear **harm_type** and **harm_amount** (if applicable).
+内部向けの原因分析メモを作成する。
 
-### 3.3 SLO-Bond
+推奨構成
 
-An **SLO-Bond** is a pre-funded pool or contractual mechanism that:
+一 事象の概要  
+二 影響範囲  
+三 技術的原因  
+四 組織的、運用上の原因  
+五 Evidence Bundle から確認できた事実  
+六 Evidence Bundle では見えなかった部分  
+七 暫定対策と恒久対策案
 
-- is tied to specific Service Level Objectives (SLOs), and  
-- pays out automatically (or semi-automatically) when those SLOs are breached.
+五と六によって Novara のカバー範囲と盲点を明確にする。
 
-The Incident Protocol uses SLO-Bonds as the **default remedy mechanism** once attribution is clear.
+## 6. T0 から三十日
 
-### 3.4 Evidence Bundle link
+次の要素をまとめた人間向け証拠パック v0.1 を作成する。
 
-Every Incident MUST reference at least one **Novara Evidence Bundle** for the relevant time window.  
-The Incident record SHOULD store:
+- human readable proof 文書  
+- 関連 Evidence Bundle の zip  
+- 影響を受けたユーザー向け Q and A  
+- 今後のフォローアップ計画
 
-- `bundle_id` (or multiple), and  
-- `chain_hash` / `last_hash` from the bundle verification.
+少なくとも次の三者がアクセスできる形を目標とする。
 
----
+- 被害者本人  
+- 関係官庁  
+- 信頼できる第三者
 
-## 4. Incident lifecycle
+## 7. ログ要件
 
-### 4.1 States
-
-An Incident MUST move through a small, explicit set of states:
-
-- `OPEN` – harm detected, investigation not complete  
-- `UNDER_REVIEW` – evidence and attribution being examined  
-- `RESOLVED` – remedy applied (payment, reversal, fix)  
-- `ESCALATED` – handed to external authority (regulator, court, ombudsman)  
-- `VOID` – opened in error, no actual Incident (with explanation)
-
-Implementations MAY add more granular sub-states,  
-but MUST be able to map them to these canonical states for reporting.
-
-### 4.2 Minimal flow (happy path)
-
-1. **Detection**  
-   - A potential harm is detected (by monitoring, user complaint, or external signal).  
-   - System creates an Incident with state `OPEN`.
-
-2. **Evidence attachment**  
-   - Relevant Evidence Bundle(s) are identified.  
-   - The Incident is linked to `bundle_id` and key hashes.
-
-3. **Attribution**  
-   - Actors, models, and policies involved are identified.  
-   - Responsibility shares (e.g. AI vs. operator vs. policy) MAY be estimated.
-
-4. **Remedy proposal**  
-   - A remedy is proposed (e.g. payout from SLO-Bond, policy change, apology, reversal).  
-   - Proof Rail MAY be used to guard any outgoing payments.
-
-5. **Decision and execution**  
-   - Remedy is approved (or rejected) under defined governance rules.  
-   - Payments go through Proof Rail with a `proof_token`.  
-   - Incident state moves to `RESOLVED`.
-
-6. **Human-readable proof**  
-   - A narrative is generated for the affected party and, if required, the public.  
-   - This may be published or delivered privately depending on policy.
-
----
-
-## 5. Incident data model (minimal fields)
-
-A conformant implementation MUST store at least the following fields for each Incident:
-
-```jsonc
-{
-  "incident_id": "inc-2025-11-19-0001",
-  "status": "RESOLVED",
-  "opened_at": "2025-11-19T10:23:00Z",
-  "closed_at": "2025-11-19T13:45:00Z",
-
-  "harm": {
-    "harm_type": "UNDERPAID_CLAIM",
-    "description": "Auto claim was underpaid due to misclassified damage.",
-    "amount": {
-      "value": 30000,
-      "currency": "JPY"
-    },
-    "affected_party": "customer:12345"
-  },
-
-  "evidence": {
-    "bundle_ids": ["nvr-eb-2025-11-19-000045"],
-    "chain_hash": "3d487a71050ad38c25740c7a93ee6212c57be0dd8dab0eec5f878ebca3fbb761"
-  },
-
-  "attribution": {
-    "ai_system_id": "claims-llm-v3",
-    "model_version": "llm-2025-10-01",
-    "policy_version": "claims-policy-v12",
-    "operators": ["operator:567"],
-    "responsibility_notes": "Primary responsibility: policy mis-specification."
-  },
-
-  "remedy": {
-    "type": "SLO_BOND_PAYOUT",
-    "amount": {
-      "value": 30000,
-      "currency": "JPY"
-    },
-    "bond_id": "slo-bond-claims-2025",
-    "payment_proof_token": "nvrp:2025-11-19:rail-01:abcd1234"
-  }
-}
-
-Implementations MAY extend this with additional fields,
-but MUST NOT remove or repurpose the above without clear migration paths.
-
-⸻
-
-6. Thresholds and materiality
-
-Each deployment MUST define:
-	•	harm_threshold – minimum value for an Incident to be required (e.g. ¥10,000),
-	•	aggregate thresholds – for systematic harms (e.g. many small harms to a group),
-	•	time windows – e.g. “incidents per day / week / month” for reporting.
-
-These thresholds MUST be:
-	•	documented in policy,
-	•	consistent with Novara Constitution v0.1 principles, and
-	•	available for audit by regulators and independent reviewers.
-
-⸻
-
-7. Relation to Proof Rail
-
-When an Incident involves a payment (compensation, refund, adjustment):
-	1.	The payment SHOULD be executed via Novara Proof Rail v0.1 or later.
-	2.	The resulting proof_token SHOULD be stored in the Incident remedy section.
-	3.	If a payment is made outside Proof Rail, the Incident MUST record:
-	•	why Proof Rail was bypassed, and
-	•	which authority approved the bypass.
-
-⸻
-
-8. Security, privacy, and ethics
-	•	Incident records MAY contain sensitive information about individuals.
-	•	Systems implementing this protocol SHOULD:
-	•	pseudonymise identifiers where possible,
-	•	separate identity store from Incident store,
-	•	implement strict access controls and audit trails for Incident access,
-	•	avoid using Incidents as a general-purpose surveillance mechanism.
-
-If a deployment starts to resemble general mass surveillance,
-it is likely outside the intended scope of Novara Core and SHOULD be questioned.
-
-⸻
-
-9. Reporting and transparency
-
-Conformant operators SHOULD maintain at least:
-	•	internal dashboards with:
-	•	number of Incidents opened / resolved / escalated,
-	•	total harm amounts,
-	•	breakdown by harm_type,
-	•	SLO-Bond activity (payouts, remaining capacity);
-	•	periodic public or regulator-facing reports with aggregated statistics,
-ensuring no individual can be re-identified from published data.
-
-Over time, operators MAY adopt common reporting schemas
-so that different organisations’ Incident data can be compared.
-
-⸻
-
-10. Conformance levels
-
-To support gradual adoption, we define three levels:
-	•	Level 1 – Basic Incident Logging
-	•	Incidents recorded with minimal fields and linked to Evidence Bundles.
-	•	No SLO-Bond automation required.
-	•	Level 2 – SLO-Bond Integrated
-	•	Incidents used to trigger SLO-Bond payouts in a structured way.
-	•	Payments largely executed through Proof Rail.
-	•	Aggregated Incident statistics available to regulators.
-	•	Level 3 – Civic-grade
-	•	Human-readable proofs routinely generated and delivered.
-	•	Public reporting of Incident statistics and remedies.
-	•	Incidents, Evidence Bundles, and Time Court tooling used in courts and policy debates.
-
-⸻
-
-11. Revision history
-	•	v0.1.0 — initial draft (2025-11-19)
-
-⸻
-
-This document is dedicated to the public domain via CC0 1.0.
-It may be copied, modified, and integrated into other systems
-without permission or attribution.
+Novara を名乗るインシデント対応では、次のログが Evidence Bundle 内に存在していなければならない。
+
+- harm につながった意思決定パス  
+  モデル名、バージョン、ポリシー ID、入力要約、出力要約  
+- 本来止めるべき地点  
+  アラートや refusal が機能しなかった箇所  
+- ロールバックや補償の実行ログ  
+
+これらが欠けている場合、それ自体を incident_handling_failure として AAL に記録する。
+
+## 8. 将来拡張
+
+v0.1 では次を未定とし、将来の spec で別途定義する。
+
+- 法的責任分配のテンプレート  
+- 保険、SLO ボンドとの自動連携仕様  
+- 公開範囲とプライバシーのバランス指標  
+- meta ASI ケース専用の追加フロー
