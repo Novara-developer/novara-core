@@ -1,153 +1,240 @@
-# novara-core
+novara-core
 
-Constitutional documents for **evidence-first AI governance**.
+Novara core specifications and reference designs for an evidence first Reality OS.
 
-This repo is **text-only**: it defines what Novara-compatible systems  
-MUST obey at the _constitutional / protocol_ level.  
-All executable code lives in the separate [`Novara`](https://github.com/Novara-developer/Novara) implementation repo.
+日本語でも簡単に書くと
+「AIと人間の判断を、後から検算できるようにする中核仕様集」です。
 
----
+⸻
 
-## Core documents (v0.1)
+0. Status
+	•	Early experimental draft
+	•	Specs will break between tags v0.x
+	•	Not production ready, but stable enough to read, review, and start prototyping
 
-These are the “v0.1 canon” for Novara:
+If you are looking for running code, start from the minimal bundle repo and come back here for the rules of the game.
 
-- **[Novara Constitution v0.1](docs/constitution/novara-constitution-v0.1-spec.md)**  
-  Evidence-first principles, civic time horizon (2040–2060).
+⸻
 
-- **[Novara Human-Readable Proof v0.1](docs/constitution/novara-human-readable-proof-v0.1-spec.md)**  
-  Plain-language narratives for victims, regulators, and the public.
+1. What lives in novara core
 
-- **[Novara Incident Protocol v0.1](docs/protocols/novara-incident-protocol-v0.1-spec.md)**  
-  How harms are recorded, attributed, and remedied via SLO-Bonds.
+This repository is the place where Novara decides
+「そもそも何を記録しろ」
+「どの粒度まで証拠として要求するか」
+「それを誰がどう検算できるか」
+を固定する。
 
-- **[Novara Proof Rail v0.1](docs/protocols/novara-proof-rail-v0.1-spec.md)**  
-  “No valid proof, no money flow” for AI-driven payments.
+Scope
+	•	Core concepts and threat model
+	•	Normative specs for trace and bundle formats
+	•	Canonical schemas and example payloads
+	•	Design notes for CTK 2 and AAL
+	•	Change control and versioning rules for all of the above
 
-Each document is versioned as `*-v0.x-spec.md`.  
-Implementations are expected to **pin** the exact version they follow.
+Out of scope
+	•	Full production implementations
+	•	Vendor specific glue code
+	•	Private deployment details
 
----
+Those live in separate repos and products.
 
-## Conceptual layers (v0.1)
+⸻
 
-Novara Core is organised into three main layers:
+2. Relationship to other Novara repositories
 
-### 1. Constitution layer
+This repo is the spine. Others hang off it.
+	•	novara evidence bundle minimal
+Minimal reference implementation and sample bundles that follow the specs in novara core
+	•	novara owner spec
+Guides for organisations that want to be Novara compatible owners
+what to log, how to publish, how to expose evidence to auditors
+	•	novara civilization os v0001
+Long horizon design notes about 2040 plus governance, economics, courts, and social use cases
 
-Long-horizon principles and guard-rails:
+Rough mental model
+	•	novara core
+What is a valid trace and bundle, in exact terms
+	•	evidence bundle minimal
+Here is one concrete way to emit and verify that trace
+	•	owner spec
+Here is how an organisation wires this into policy and process
 
-- What counts as acceptable evidence
-- How attribution and responsibility are handled
-- Why Novara targets the **2040–2060** civic time window, not just the next product cycle
+⸻
 
-> If a future implementation disagrees with this layer,  
-> it is **not** “Novara-compatible”, even if it reuses the code.
+3. Core ideas in under 5 minutes
 
-### 2. Protocol layer
+These names appear across the docs. novara core is where their exact meaning is pinned down.
 
-Operational rules for systems that move money or cause harm:
+CTK 2
+Canonical Trace Kit version 2
+A minimal but strong checklist of what must be attached to any serious AI decision
+inputs, model context, environment, anchors, and a way to replay
 
-- **Incident Protocol** – what happens when things go wrong  
-  (incident declaration, evidence requirements, SLO-Bond based remedies).
-- **Proof Rail** – payment gate for AI decisions  
-  (no valid evidence bundle → payment MUST be refused).
+AAL
+Audit Aligned Ledger
+An append only log where every step of a decision is linked, signed, and time anchored in a way that third parties can replay without trusting the operator
 
-These protocols are **implementation-neutral** and can be adopted by:
+Evidence bundle
+A portable zip like package that contains
+data, configs, logs, anchors, proofs, and a manifest
+so that an auditor can say
+this decision really came from that system, in that state, under those limits
 
-- insurers / banks / payment processors  
-- regulators and auditors  
-- AI system operators who want verifiable rails
+Proof to Pay
+A pattern where payments, approvals, or risk limits are only unlocked if the attached bundle passes verification
 
-### 3. Story layer
+Independence
+A set of metrics that answer
+how many different parties and infrastructures agree that this trace is real
+The exact definition and formula live in this repo
 
-How all of this appears to normal humans:
+Everything else in novara is built on top of these primitives.
 
-- Human-readable proofs / narratives
-- What a victim, journalist, or regulator actually sees
-- How “hashes and JSON” turn into “who did what / who pays / what changed”
+⸻
 
----
+4. Repository layout
 
-## Planned extensions (not yet in this repo)
+Target layout for this repo
+	•	docs
+High level docs and design notes
+	•	docs spec
+Normative specifications
+CTK 2
+AAL
+Evidence bundle
+Web visit and related sub specs
+	•	docs schema
+Machine readable schemas
+JSON Schema for manifests and entries
+Canonical field names and types
+	•	docs rfc
+Numbered change proposals
+rfc 0001 ctk2 minimal fields
+rfc 0002 aal entry invariants
+rfc 0003 evidence bundle compatibility rules
+	•	docs guide
+Human readable guides
+Implementer guide for infra teams
+Auditor guide
+Policy writer guide
 
-The v0.1 set is intentionally small. Future documents are expected to add:
+Some of these directories may be missing right now. The README describes the intended structure so that early contributors and future you have a clear target.
 
-- **Time Court** – counterfactual re-trial of past AI decisions  
-  using preserved evidence bundles and policy snapshots.
-- **Gen-Z Pact** – a civic right to demand verifiable evidence from AI systems  
-  (“show your receipts” as a default expectation).
+⸻
 
-These will be added under `docs/` as separate specs once they are stable enough.
+5. Who this repo is for
 
----
+The text here is not marketing. It is for people who have to sign off on something that can go catastrophically wrong.
 
-## Relationship to the `Novara` implementation repo
+Primary audiences
+	•	Infra and platform engineers who will implement logging and bundles
+	•	Security and reliability teams who will have to defend incidents in public
+	•	Risk, compliance, and insurance people who care about calculable guarantees
+	•	Researchers working on AI governance, reproducibility, and secure logging
+	•	Regulators and courts that need a concrete technical reference, not buzzwords
 
-- This repo (`novara-core`) is **text-only** and **vendor-neutral**.
-- The [`Novara`](https://github.com/Novara-developer/Novara) repo is the **implementation side**:
-  - Evidence Bundle format and reference library
-  - CLI tools and tests
-  - Example integrations and demo bundles
+If you are writing production code, you probably want to
+	•	read specs here
+	•	clone novara evidence bundle minimal
+	•	emit a small test bundle
+	•	run verify on it
+	•	only then propose larger integration work
 
-A system MAY implement the Novara specs without using the reference code,  
-but then it MUST still:
+⸻
 
-1. Point to the exact spec versions it follows (e.g. `novara-proof-rail-v0.1`), and  
-2. Provide enough public evidence for third parties to verify conformance.
+6. Design principles
 
----
+At a high level novara core is trying to be
+	•	Evidence first
+If something is not reconstructable from public or bundled data, it does not count as proof
+	•	Tool and vendor neutral
+The spec describes what must be visible on the wire and in the bundle, not which specific cloud or model
+	•	Auditor centric
+A careful third party with no access to internal systems should be able to say
+this is consistent or this is broken
+in a bounded amount of time
+	•	Good enough for 2040
+Strong crypto, hybrid attestation, and independent timing are treated as default, not luxury add ons
+	•	Strict at the edge, flexible inside
+The required external surface is locked down
+Inside your organisation you can have many internal logs, but only one canonical projection outwards
 
-## How to use these specs
+These principles show up in the acceptance criteria and invariants for every spec.
 
-You can think of `novara-core` as a **reference constitution** for AI systems that move money.
+⸻
 
-Typical uses:
+7. Getting started
 
-- **Read & critique**  
-  - The texts are meant to be argued with.  
-  - Open issues or forks are welcome when something is unclear, unrealistic, or missing.
+Short path to make this repo useful for you
 
-- **Fork & adapt**  
-  - Regulators, insurers, and researchers are encouraged to copy and adapt the specs  
-    to their own legal / cultural context.  
-  - Please keep version markers and major changes visible.
+Step 1
+Read the overview documents in docs
+Names and concepts first, maths and edge cases later
 
-- **Implement**  
-  - If you claim a system is “Novara-compatible”, you SHOULD:
-    - reference the exact spec documents and versions, and  
-    - expose evidence (e.g. Novara Evidence Bundles) that third parties can verify.
+Step 2
+Pick one spec
+For most people that will be ctk2 or evidence bundle manifest
+Try to map it onto one real system or process you own today
 
----
+Step 3
+Write down what is missing
+Fields you cannot fill yet
+Anchors you do not have
+Independence dimensions you cannot satisfy
 
-## Versioning
+Step 4
+File an issue or keep your own notes
+This repo will only get better if concrete friction from real systems flows back into the text
 
-- v0.x documents are **experimental but serious**:  
-  they are intended for pilots, research, and early regulatory sandboxes.
-- Breaking changes will bump the minor version (e.g. `v0.2`),  
-  and, when stable, major versions (`v1.0+`) will be reserved for production use.
+⸻
 
-Old versions will remain in the repo so that **past cases**  
-can always be mapped to the exact rules that were in force.
+8. Versioning and compatibility
 
----
+The intention is
+	•	v0.x
+Fast iteration, breaking changes allowed, explicit changelog
+	•	v1.x
+Stabilised core
+Backwards compatible within the major version
+Extensions via optional fields and new profiles, not breaking existing fields
 
-## Contributing
+Specs will carry explicit
+	•	status draft, experimental, stable
+	•	last reviewed date
+	•	version and change history
 
-Text contributions are welcome:
+Any implementer is strongly encouraged to record which spec versions and profiles they target inside their bundles, so that future auditors can reason about them.
 
-- Fix unclear language, typos, or contradictions
-- Propose new sections (with clear motivation and examples)
-- Link real-world pilots, incidents, and research that stress-test the specs
+⸻
 
-Please keep changes **minimal and well-scoped**, and open an issue for any  
-proposal that changes semantics in a non-trivial way.
+9. Contributing
 
----
+Even at this early stage, outside eyes are useful.
 
-## License
+Good contributions include
+	•	Threat model corrections
+	•	Simpler definitions for the same invariants
+	•	Example incidents that should or should not be representable
+	•	Cross references to existing standards we should align with, not reinvent
 
-All texts in this repository are dedicated to the public domain under **CC0 1.0**.  
+For now, open an issue or a discussion on GitHub. A formal governance and RFC process will move into this repo once the first few specs harden.
 
-You may copy, modify, translate, and integrate them into other systems  
-without permission or attribution, including for commercial and governmental use.
+⸻
+
+10. License and governance sketch
+
+Code and schemas will be under a permissive open source license.
+Textual specifications will be open and usable in both open and commercial contexts, but the Novara name and compatibility marks will be guarded by a future foundation so that they cannot be quietly weakened.
+
+Exact legal text is still in progress and will be documented here once ready.
+
+⸻
+
+11. Contact
+
+For now
+	•	GitHub issues on this repository
+	•	Direct messages or email listed on the Novara developer profile
+	•	In the future, a more formal spec mailing list and public call schedule
+
+If you are a regulator, insurer, or large infra provider and want a private conversation about the direction of these specs, reach out and mention your institution in the subject line so it gets prioritised.
